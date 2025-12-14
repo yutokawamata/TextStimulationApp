@@ -1,0 +1,65 @@
+/* モード選択画面のコンテナ */
+.container {
+  min-height: 100vh;
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* フォームコンテナ */
+.form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+  max-width: var(--container-width-large);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* モード選択のラジオボタンコンテナ */
+.voiceOptions {
+  display: flex;
+  gap: var(--spacing-lg);
+  font-size: var(--font-size-medium);
+}
+
+/* ラジオボタンのラベル */
+.voiceOption {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* つぎへボタン */
+.actionButton {
+  width: 320px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* タブレット・モバイル向けのレスポンシブデザイン */
+@media screen and (max-width: 1024px) {
+  .voiceOptions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .actionButton {
+    width: var(--button-width-normal);
+  }
+}
+

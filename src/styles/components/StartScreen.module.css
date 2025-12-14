@@ -1,0 +1,116 @@
+/* 練習開始画面のコンテナ */
+.container {
+  min-height: 100vh;
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* メインコンテンツエリア: スタートボタンと説明文を横並びで配置 */
+.content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start; /* 垂直方向を上揃えに変更（全モードで統一） */
+  justify-content: flex-end; /* 右寄せ */
+  gap: var(--spacing-xl);
+  padding: 30px 50px var(--spacing-xl) var(--spacing-xl); /* 上30px、右50px、下と左は既存のspacing-xl */
+  max-width: var(--container-width-large);
+  margin-left: auto; /* 右寄せ */
+  margin-right: 0; /* 右端に配置 */
+  width: 100%;
+}
+
+/* 左側セクション: スタートボタン */
+.leftSection {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* スタートボタン: 共通のbuttonクラスに加えて、サイズと影をカスタマイズ */
+.startButton {
+  width: 320px;
+  height: 120px;
+  font-size: var(--font-size-xlarge);
+  font-weight: 600;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+}
+
+.startButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+.startButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* 右側セクション: 説明文表示エリア */
+.rightSection {
+  flex: 0 0 auto; /* 文章の幅に合わせる */
+  display: flex;
+  justify-content: flex-end; /* 右寄せ */
+  align-items: flex-start; /* 垂直方向を上揃えに変更（全モードで統一） */
+}
+
+/* 説明文のコンテナ: 複数の列を横並びで表示 */
+/* row-reverse: 縦書きは右から左に読むため、列の順序を逆にする */
+.instructions {
+  display: flex;
+  flex-direction: row-reverse; /* 列を逆順に */
+  gap: var(--spacing-lg); /* 列間のスペース */
+  align-items: flex-start; /* 列を上寄せに */
+}
+
+/* 説明文の各列: 縦書き表示 */
+/* writing-mode: vertical-rl で縦書き、direction: rtl で右から左の順序に */
+.instructionColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm); /* 列間のスペース */
+  writing-mode: vertical-rl; /* 縦書き表示 */
+  text-orientation: upright; /* 文字を正立させる */
+}
+
+/* 説明文のテキスト: 全角スペースで結合された文節を表示 */
+/* white-space: pre-line で改行文字を尊重しつつ、連続する空白を折りたたむ */
+.instructionText {
+  font-size: var(--font-size-medium);
+  color: var(--color-text); /* テキストの色 */
+  line-height: 1.8; /* 行間のスペース */
+  text-align: right; /* テキストを右寄せ（縦書きでは下側に揃える） */
+  white-space: pre-line; /* 改行文字を尊重 */
+}
+
+/* タブレット・モバイル向けのレスポンシブデザイン */
+@media screen and (max-width: 1024px) {
+  /* コンテンツを縦並びに変更 */
+  .content {
+    flex-direction: column; /* コンテンツを縦並びに */
+    gap: var(--spacing-xl); /* コンテンツ間のスペース */
+  }
+
+  /* 説明文を横書きに変更（モバイルでは縦書きが読みにくいため） */
+  .instructions {
+    writing-mode: horizontal-tb; /* 横書きに変更 */
+    text-orientation: mixed; /* 文字の向きを混合に */
+    flex-direction: column; /* 列を縦並びに */
+    gap: var(--spacing-md); /* 列間のスペース */
+  }
+
+  /* 各列内のテキストも横並びに */
+  .instructionColumn {
+    flex-direction: row; /* 列を横並びに */
+    gap: var(--spacing-xs); /* 列間のスペース */
+  }
+
+  /* スタートボタンのサイズを調整 */
+  .startButton {
+    width: var(--button-width-normal); /* ボタンの幅 */
+    height: var(--button-height); /* ボタンの高さ */
+  }
+}
+

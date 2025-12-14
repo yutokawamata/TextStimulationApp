@@ -1,0 +1,89 @@
+/* 完了画面のコンテナ */
+.container {
+  min-height: 100vh;
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* メインコンテンツエリア: 画像と時間表示・ボタンを横並びで配置 */
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+  max-width: var(--container-width-large);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 左側セクション: 頑張りました画像 */
+.leftSection {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 頑張りました画像 */
+.image {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* 右側セクション: 時間表示とおわりボタン */
+.rightSection {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+/* 時間表示エリア */
+.timeDisplay {
+  text-align: center;
+}
+
+/* 時間テキスト */
+.timeText {
+  font-size: var(--font-size-large);
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* おわりボタン */
+.finishButton {
+  width: 320px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+}
+
+.finishButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+.finishButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* タブレット・モバイル向けのレスポンシブデザイン */
+@media screen and (max-width: 1024px) {
+  /* コンテンツを縦並びに変更 */
+  .content {
+    flex-direction: column;
+    gap: var(--spacing-xl);
+  }
+
+  /* おわりボタンのサイズを調整 */
+  .finishButton {
+    width: var(--button-width-normal);
+  }
+}
+

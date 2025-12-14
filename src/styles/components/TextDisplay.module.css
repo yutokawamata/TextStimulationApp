@@ -1,0 +1,156 @@
+/* 文節表示コンポーネントのスタイル */
+
+/* コンテナ: フレックスボックスレイアウトを使用 */
+.container {
+  display: flex; /* フレックスボックスレイアウトを使用 */
+  justify-content: center; /* 水平方向の中央揃え（デフォルト） */
+  align-items: center; /* 垂直方向の中央揃え（デフォルト） */
+  height: 100vh; /* 画面の高さ100%を占める */
+  background-color: var(--color-background); /* 背景色を薄いグレーに設定 */
+}
+
+/* 通常モード用のコンテナ: 上寄せ・右寄せ */
+.containerNormal {
+  display: flex;
+  align-items: flex-start; /* 垂直方向を上寄せに変更 */
+  justify-content: flex-end; /* 水平方向を右寄せに変更（縦書きでは右から左に表示） */
+  padding-top: 30px; /* ナビバーの下に30pxの余白 */
+  padding-right: 50px; /* 右側に50pxの余白 */
+  margin-top: 0; /* 上部マージンを0に */
+  height: 100vh;
+  background-color: var(--color-background);
+  align-content: flex-start; /* 複数行の場合も上寄せ */
+}
+
+/* 全文節モード用のコンテナ: 相対位置、上寄せ・右寄せ */
+.containerFullText {
+  position: relative; /* 相対位置 */
+  display: flex;
+  align-items: flex-start; /* 交差軸（水平方向）の開始 = 右側 */
+  justify-content: flex-start; /* 主軸（垂直方向）の開始 = 上側 */
+  padding-top: 30px; /* ナビバーの下に30pxの余白 */
+  padding-right: 50px; /* 右側に50pxの余白 */
+  padding-bottom: 150px; /* ボタンが表示されるスペースを確保（余裕を持たせる） */
+  margin-top: 0; /* 上部マージンを0に */
+  min-height: 100vh; /* 最小高さを100vhに（コンテンツが長い場合は伸びる） */
+  background-color: var(--color-background);
+  align-content: flex-start; /* 複数行の場合も上寄せ */
+  overflow-y: auto; /* 縦スクロールを有効にする */
+}
+
+/* テキスト表示エリア: 縦書き表示 */
+.textDisplay {
+  display: flex;
+  flex-direction: row-reverse; /* 列を逆順に（縦書きは右から左に読むため） */
+  gap: 10px; /* 列間のスペース */
+  align-items: flex-start; /* 列を上寄せに */
+  margin-top: 0;
+  padding-top: 0;
+  margin-left: auto; /* 右寄せのため */
+  align-self: flex-start; /* 上部に揃える */
+  cursor: pointer; /* マウスカーソルをポインターに変更（クリック可能を示す） */
+  user-select: none; /* テキストの選択を無効にする（クリック時のテキスト選択を防ぐ） */
+  overflow: visible; /* オーバーフローを表示 */
+  height: auto; /* 高さを自動に設定（コンテンツに合わせる） */
+}
+
+/* 全文節モード用のテキスト表示: 右寄せのためmargin-left: auto */
+.textDisplayFullText {
+  display: flex;
+  flex-direction: row-reverse; /* 列を逆順に（縦書きは右から左に読むため） */
+  gap: 10px; /* 列間のスペース */
+  align-items: flex-start; /* 列を上寄せに */
+  margin-top: 0;
+  padding-top: 0;
+  margin-left: auto; /* 右寄せのため */
+  align-self: flex-start; /* 交差軸（水平方向）の開始 = 右側 */
+  cursor: pointer;
+  user-select: none;
+  overflow: visible; /* オーバーフローを表示 */
+}
+
+/* 全文節モード用の各列コンテナ */
+.textColumn {
+  display: flex;
+  flex-direction: row; /* 縦書きではrowが縦方向（上から下）になる */
+  writing-mode: vertical-rl; /* 縦書き表示 */
+  text-orientation: upright; /* 文字を正立させる */
+  color: var(--color-text);
+  font-size: 0; /* 列の高さを揃えるため（子要素で再設定） */
+  line-height: 0; /* 列の高さを揃えるため（子要素で再設定） */
+}
+
+/* 文節: インラインブロック要素として表示 */
+.textSegment {
+  display: block; /* flexコンテナ内ではflex-itemとして扱われる */
+  margin-top: 8px; /* 縦書きでは上下の余白（文節間の空白）を減らす */
+  margin-bottom: 8px; /* 縦書きでは上下の余白（文節間の空白）を減らす */
+  margin-left: 0; /* 縦書きでは左右の余白は不要 */
+  margin-right: 0; /* 縦書きでは左右の余白は不要 */
+  opacity: 0; /* 初期状態では透明（非表示） */
+  transition: opacity 0.3s ease-in-out; /* 透明度の変化にアニメーション効果を追加（0.3秒でスムーズに変化） */
+  font-size: var(--font-size-medium); /* ナビバーと同じフォントサイズ */
+  line-height: 2.5; /* 全文節モード用: 行間を再設定 */
+}
+
+/* 文節: 表示状態 */
+.textSegmentVisible {
+  opacity: 1; /* 完全に不透明（表示状態） */
+}
+
+/* 列の最初の文節: 上部余白を0にして列を上揃え */
+.textSegmentFirstInColumn {
+  margin-top: 0 !important; /* 列の最初の要素は上部余白なし */
+}
+
+/* 文節: 非表示状態 */
+.textSegmentHidden {
+  opacity: 0; /* 完全に透明（非表示状態） */
+}
+
+/* ふりがな（ルビ）のスタイル */
+.textSegment ruby {
+  ruby-align: center; /* ルビを中央揃え */
+  ruby-overhang: auto; /* ルビのオーバーハングを自動調整 */
+}
+
+.textSegment rt {
+  font-size: 0.5em; /* ふりがなのフォントサイズを本文の50%に設定 */
+  line-height: 1.2; /* ふりがなの行間を調整 */
+  color: var(--color-text-light); /* ふりがなの色をグレーに設定（本文より薄く） */
+  font-weight: normal; /* ふりがなのフォントウェイトを通常に設定 */
+}
+
+/* 全文節モード用の「つぎへ」ボタン */
+.nextButton {
+  position: absolute;
+  bottom: 80px; /* 下部から80px上に配置（余裕を持たせる） */
+  left: 20px;
+  z-index: var(--z-index-nav);
+  width: 320px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nextButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+.nextButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* 改行のスタイル（縦書き用） */
+.lineBreak {
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  /* 縦書きでは次の列（右側）に表示されるようにする */
+  /* inline-block要素の間でblock要素を挿入すると、改行が発生し次の列に移動する */
+  /* 縦書きでは、block要素が次の列に移動する */
+}
+
