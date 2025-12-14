@@ -1,39 +1,49 @@
 {
   "grades": [
     {
-      "folder": "1年生",
-      "label": "1年生",
+      "folder": "1å¹´ç",
+      "label": "1å¹´ç",
       "stories": [
         {
-          "filename": "森へ行こう.txt",
-          "label": "森へ行こう"
+          "filename": "æ£®ã¸è¡ãã.txt",
+          "label": "æ£®ã¸è¡ãã"
         }
       ]
     },
     {
+      "folder": "2å¹´ç",
+      "label": "2å¹´ç",
+      "stories": []
+    },
+    {
+      "folder": "3å¹´ç",
+      "label": "3å¹´ç",
+      "stories": []
+    },
+    {
+      "folder": "4å¹´ç",
+      "label": "4å¹´ç",
+      "stories": []
+    },
+    {
+      "folder": "5å¹´ç",
+      "label": "5å¹´ç",
+      "stories": []
+    },
+    {
+      "folder": "6å¹´ç",
+      "label": "6å¹´ç",
+      "stories": []
+    },
+    {
       "folder": "2年生",
       "label": "2年生",
-      "stories": []
-    },
-    {
-      "folder": "3年生",
-      "label": "3年生",
-      "stories": []
-    },
-    {
-      "folder": "4年生",
-      "label": "4年生",
-      "stories": []
-    },
-    {
-      "folder": "5年生",
-      "label": "5年生",
-      "stories": []
-    },
-    {
-      "folder": "6年生",
-      "label": "6年生",
-      "stories": []
+      "stories": [
+        {
+          "filename": "川へ行こう.txt",
+          "label": "川へ行こう"
+        }
+      ]
     }
   ]
 }
