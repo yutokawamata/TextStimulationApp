@@ -1,16 +1,66 @@
 {
   "grades": [
     {
-      "folder": "1年生",
-      "label": "1年生",
+      "folder": "1å¹´ç",
+      "label": "1å¹´ç",
       "stories": [
         {
           "filename": "placeholder.txt",
           "label": "placeholder"
         },
         {
-          "filename": "森へ行こう.txt",
-          "label": "森へ行こう"
+          "filename": "æ£®ã¸è¡ãã.txt",
+          "label": "æ£®ã¸è¡ãã"
+        }
+      ]
+    },
+    {
+      "folder": "2å¹´ç",
+      "label": "2å¹´ç",
+      "stories": [
+        {
+          "filename": "placeholder.txt",
+          "label": "placeholder"
+        }
+      ]
+    },
+    {
+      "folder": "3å¹´ç",
+      "label": "3å¹´ç",
+      "stories": [
+        {
+          "filename": "placeholder.txt",
+          "label": "placeholder"
+        }
+      ]
+    },
+    {
+      "folder": "4å¹´ç",
+      "label": "4å¹´ç",
+      "stories": [
+        {
+          "filename": "placeholder.txt",
+          "label": "placeholder"
+        }
+      ]
+    },
+    {
+      "folder": "5å¹´ç",
+      "label": "5å¹´ç",
+      "stories": [
+        {
+          "filename": "placeholder.txt",
+          "label": "placeholder"
+        }
+      ]
+    },
+    {
+      "folder": "6å¹´ç",
+      "label": "6å¹´ç",
+      "stories": [
+        {
+          "filename": "placeholder.txt",
+          "label": "placeholder"
         }
       ]
     },
@@ -19,48 +69,8 @@
       "label": "2年生",
       "stories": [
         {
-          "filename": "placeholder.txt",
-          "label": "placeholder"
-        }
-      ]
-    },
-    {
-      "folder": "3年生",
-      "label": "3年生",
-      "stories": [
-        {
-          "filename": "placeholder.txt",
-          "label": "placeholder"
-        }
-      ]
-    },
-    {
-      "folder": "4年生",
-      "label": "4年生",
-      "stories": [
-        {
-          "filename": "placeholder.txt",
-          "label": "placeholder"
-        }
-      ]
-    },
-    {
-      "folder": "5年生",
-      "label": "5年生",
-      "stories": [
-        {
-          "filename": "placeholder.txt",
-          "label": "placeholder"
-        }
-      ]
-    },
-    {
-      "folder": "6年生",
-      "label": "6年生",
-      "stories": [
-        {
-          "filename": "placeholder.txt",
-          "label": "placeholder"
+          "filename": "川へ行こう.txt",
+          "label": "川へ行こう"
         }
       ]
     }
