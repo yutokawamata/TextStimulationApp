@@ -1,19 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../styles/components/Navi.module.css';
-
-/**
- * アラートメッセージを表示するコンポーネント
- */
-const AlertMessage = ({ message, onClose }: { message: string; onClose: () => void }) => {
-  return (
-    <div className={styles.alertOverlay}>
-      <div className={styles.alertBox}>
-        <p>{message}</p>
-        <button className={styles.alertButton} onClick={onClose}>OK</button>
-      </div>
-    </div>
-  );
-};
 
 /**
  * ナビゲーションボタンの設定
@@ -125,14 +111,6 @@ export const Navi: React.FC<NaviProps> = ({
   onBackToHome,
   onBackToTextHome
 }) => {
-  // アラート表示のための状態
-  const [alertMessage, setAlertMessage] = useState('');
-  const [showAlertBox, setShowAlertBox] = useState(false);
-
-  // アラートを閉じる関数
-  const closeAlert = () => {
-    setShowAlertBox(false);
-  };
 
   // アプリ選択画面ではナビバーを表示しない
   if (currentApp === 'selector') {
@@ -179,13 +157,6 @@ export const Navi: React.FC<NaviProps> = ({
         </div>
       </div>
 
-      {/* アラートメッセージ */}
-      {showAlertBox && (
-        <AlertMessage
-          message={alertMessage}
-          onClose={closeAlert}
-        />
-      )}
     </>
   );
 };

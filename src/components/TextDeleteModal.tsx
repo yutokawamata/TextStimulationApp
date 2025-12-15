@@ -342,11 +342,6 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
               className={styles.textInput}
               disabled={isDeleting}
             />
-            <p className={styles.helpText}>
-              取得方法: GitHub &gt; Settings &gt; Developer settings &gt; Personal access tokens &gt; Tokens (classic)
-              <br />
-              必要な権限: repo (すべてのリポジトリへのアクセス)
-            </p>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}

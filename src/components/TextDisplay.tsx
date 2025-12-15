@@ -360,11 +360,12 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
 
     preload();
 
+    // クリーンアップ用にrefの値をコピー
+    const cacheForCleanup = audioPathCacheRef.current;
     return () => {
       disposed = true;
-      const cache = audioPathCacheRef.current;
-      if (cache) {
-        cache.clear();
+      if (cacheForCleanup) {
+        cacheForCleanup.clear();
       }
     };
   }, [segments, textAppSettings]);

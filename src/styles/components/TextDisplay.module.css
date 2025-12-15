@@ -83,13 +83,13 @@
 /* 文節: インラインブロック要素として表示 */
 .textSegment {
   display: block; /* flexコンテナ内ではflex-itemとして扱われる */
-  margin-top: 8px; /* 縦書きでは上下の余白（文節間の空白）を減らす */
-  margin-bottom: 8px; /* 縦書きでは上下の余白（文節間の空白）を減らす */
+  margin-top: 4px; /* 縦書きでは上下の余白（文節間の空白）- 狭めに調整 */
+  margin-bottom: 4px; /* 縦書きでは上下の余白（文節間の空白）- 狭めに調整 */
   margin-left: 0; /* 縦書きでは左右の余白は不要 */
   margin-right: 0; /* 縦書きでは左右の余白は不要 */
   opacity: 0; /* 初期状態では透明（非表示） */
   transition: opacity 0.3s ease-in-out; /* 透明度の変化にアニメーション効果を追加（0.3秒でスムーズに変化） */
-  font-size: var(--font-size-medium); /* ナビバーと同じフォントサイズ */
+  font-size: 30px; /* フォントサイズを大きく（24px → 30px） */
   line-height: 2.5; /* 全文節モード用: 行間を再設定 */
 }
 
@@ -152,5 +152,23 @@
   /* 縦書きでは次の列（右側）に表示されるようにする */
   /* inline-block要素の間でblock要素を挿入すると、改行が発生し次の列に移動する */
   /* 縦書きでは、block要素が次の列に移動する */
+}
+
+/* レスポンシブ対応: タブレット */
+@media screen and (max-width: 1024px) {
+  .textSegment {
+    font-size: 26px; /* タブレット用のフォントサイズ */
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+}
+
+/* レスポンシブ対応: スマートフォン */
+@media screen and (max-width: 768px) {
+  .textSegment {
+    font-size: 22px; /* スマートフォン用のフォントサイズ */
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
 }
 

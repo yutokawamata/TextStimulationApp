@@ -61,28 +61,38 @@
 .instructions {
   display: flex;
   flex-direction: row-reverse; /* 列を逆順に */
-  gap: var(--spacing-lg); /* 列間のスペース */
+  gap: 15px; /* 列間のスペースを狭く（20px → 15px） */
   align-items: flex-start; /* 列を上寄せに */
 }
 
 /* 説明文の各列: 縦書き表示 */
 /* writing-mode: vertical-rl で縦書き、direction: rtl で右から左の順序に */
 .instructionColumn {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm); /* 列間のスペース */
+  display: flex; /* 練習画面に合わせる */
+  flex-direction: row; /* 縦書きではrowが縦方向（上から下）になる */
   writing-mode: vertical-rl; /* 縦書き表示 */
   text-orientation: upright; /* 文字を正立させる */
+  font-size: 0; /* 列の高さを揃えるため（子要素で再設定） */
+  line-height: 0; /* 列の高さを揃えるため（子要素で再設定） */
 }
 
-/* 説明文のテキスト: 全角スペースで結合された文節を表示 */
-/* white-space: pre-line で改行文字を尊重しつつ、連続する空白を折りたたむ */
+/* 説明文のテキスト: 各文節を個別に表示 */
 .instructionText {
-  font-size: var(--font-size-medium);
+  display: block; /* 練習画面に合わせる */
+  font-size: 30px; /* フォントサイズを大きく（24px → 30px） */
   color: var(--color-text); /* テキストの色 */
-  line-height: 1.8; /* 行間のスペース */
+  line-height: 2.5; /* 練習画面に合わせる */
+  margin-top: 4px; /* 練習画面に合わせる */
+  margin-bottom: 4px; /* 練習画面に合わせる */
+  margin-left: 0;
+  margin-right: 0;
   text-align: right; /* テキストを右寄せ（縦書きでは下側に揃える） */
-  white-space: pre-line; /* 改行文字を尊重 */
+  white-space: nowrap; /* テキストを折り返さない */
+}
+
+/* 列の最初の文節: 上部余白を0にして列を上揃え */
+.instructionText:first-child {
+  margin-top: 0 !important; /* 列の最初の要素は上部余白なし */
 }
 
 /* タブレット・モバイル向けのレスポンシブデザイン */
@@ -98,19 +108,41 @@
     writing-mode: horizontal-tb; /* 横書きに変更 */
     text-orientation: mixed; /* 文字の向きを混合に */
     flex-direction: column; /* 列を縦並びに */
-    gap: var(--spacing-md); /* 列間のスペース */
+    gap: 8px; /* 列間のスペースを狭く（10px → 8px） */
   }
 
-  /* 各列内のテキストも横並びに */
+  /* 各列を横書きモードに */
   .instructionColumn {
-    flex-direction: row; /* 列を横並びに */
-    gap: var(--spacing-xs); /* 列間のスペース */
+    writing-mode: horizontal-tb; /* 横書きに変更 */
+    flex-direction: row; /* 横書きでは横並びに */
   }
 
   /* スタートボタンのサイズを調整 */
   .startButton {
     width: var(--button-width-normal); /* ボタンの幅 */
     height: var(--button-height); /* ボタンの高さ */
+  }
+
+  /* タブレット用のフォントサイズ */
+  .instructionText {
+    font-size: 26px;
+    line-height: 2.5; /* 練習画面に合わせる */
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+}
+
+/* スマートフォン向けのレスポンシブデザイン */
+@media screen and (max-width: 768px) {
+  .instructionText {
+    font-size: 22px;
+    line-height: 2.5; /* 練習画面に合わせる */
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+  
+  .instructions {
+    gap: 10px;
   }
 }
 

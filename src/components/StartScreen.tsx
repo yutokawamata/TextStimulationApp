@@ -115,9 +115,12 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart, onBack, voice
             {/* 説明文の各列を表示（空行で区切られた各ブロックが1列として表示される） */}
             {instructions.map((column, index) => (
               <div key={index} className={styles.instructionColumn}>
-                <div className={styles.instructionText}>
-                  {column}
-                </div>
+                {/* 全角スペースまたは半角スペースで文節に分割して個別に表示 */}
+                {column.split(/[　 ]+/).filter(segment => segment.trim()).map((segment, segmentIndex) => (
+                  <span key={segmentIndex} className={styles.instructionText}>
+                    {segment}
+                  </span>
+                ))}
               </div>
             ))}
           </div>

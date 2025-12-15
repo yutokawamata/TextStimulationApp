@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import styles from '../styles/components/HomeScreen.module.css';
 import { TextUploadModal } from './TextUploadModal';
 import { TextDeleteModal } from './TextDeleteModal';
+import { TextReorderModal } from './TextReorderModal';
+import { TextManageModal } from './TextManageModal';
 
 export type TextAppSettings = {
   gradeFolder: string; // 学年フォルダ名（例: "1年生"）
@@ -41,17 +43,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
   const [selectedGradeFolder, setSelectedGradeFolder] = useState<string>('');
   const [selectedStoryFilename, setSelectedStoryFilename] = useState<string>('');
   const [voiceMode, setVoiceMode] = useState<TextAppSettings['voiceMode']>('voice-on');
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const reloadTimeoutRef = React.useRef<number | null>(null);
 
   // ファイル一覧を読み込む
   useEffect(() => {
-    // 常にgh-pagesの最新のtext-list.jsonを参照
     const timestamp = new Date().getTime();
-    const url = `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
+    
+    // 環境に応じてURLを切り替え
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const basePath = process.env.PUBLIC_URL || '';
+    
+    // ローカル環境ではローカルのtext-list.jsonを、本番環境ではGitHub Pagesのものを参照
+    const url = isLocalhost
+      ? `${basePath}/data/text-list.json?t=${timestamp}`
+      : `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
+    
     fetch(url, {
       cache: 'no-cache',
       headers: {
@@ -80,7 +92,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
   // 選択された学年の文章一覧を取得
   const selectedGradeInfo = useMemo(() => {
     if (!textListData) return null;
-    return textListData.grades.find(grade => grade.folder === selectedGradeFolder);
+    const gradeInfo = textListData.grades.find(grade => grade.folder === selectedGradeFolder);
+    console.log('[HomeScreen] selectedGradeInfo:', gradeInfo, 'stories count:', gradeInfo?.stories.length);
+    return gradeInfo;
   }, [textListData, selectedGradeFolder]);
 
   // 学年が変更されたら、最初の文章を選択
@@ -216,6 +230,80 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
     }
   };
 
+  // 並び替えを保存（GitHub APIでtext-list.jsonを更新）
+  const handleReorder = async (token: string, reorderedStories: StoryInfo[]): Promise<void> => {
+    const githubOwner = process.env.REACT_APP_GITHUB_OWNER || 'yutokawamata';
+    const githubRepo = process.env.REACT_APP_GITHUB_REPO || 'TextStimulationApp';
+    const githubBranch = 'gh-pages';
+
+    if (!textListData) {
+      throw new Error('text-list.jsonが読み込まれていません');
+    }
+
+    // 現在のtext-list.jsonを取得し、選択された学年の文章順序だけを更新
+    const updatedGrades = textListData.grades.map(grade => {
+      if (grade.folder === selectedGradeFolder) {
+        return {
+          ...grade,
+          stories: reorderedStories
+        };
+      }
+      return grade;
+    });
+
+    const updatedData: TextListData = {
+      grades: updatedGrades
+    };
+
+    // JSONを文字列化してBase64エンコード
+    const jsonString = JSON.stringify(updatedData, null, 2);
+    const base64Encoded = btoa(unescape(encodeURIComponent(jsonString)));
+
+    // 現在のtext-list.jsonのSHAを取得
+    const getResponse = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json?ref=${githubBranch}`,
+      {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (!getResponse.ok) {
+      throw new Error('text-list.jsonの取得に失敗しました');
+    }
+
+    const fileData = await getResponse.json();
+
+    // text-list.jsonを更新
+    const updateResponse = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Reorder stories in ${selectedGradeFolder}`,
+          content: base64Encoded,
+          sha: fileData.sha,
+          branch: githubBranch,
+        }),
+      }
+    );
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
+      throw new Error(`text-list.jsonの更新に失敗しました: ${errorData.message}`);
+    }
+
+    // 更新後、リストを再読み込み
+    await reloadTextList();
+  };
+
   // ファイル一覧を再読み込み
   const reloadTextList = async (delay: number = 0, regenerate: boolean = false) => {
     // regenerate=trueの場合、GitHub APIでtext-list.jsonを再生成
@@ -286,13 +374,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
     };
   }, []);
 
-  // GitHub Pagesからtext-list.jsonを読み込む
+  // text-list.jsonを読み込む（環境に応じてローカルまたはGitHub Pagesから）
   const loadTextListFromGitHubPages = () => {
     console.log('[ロード] text-list.jsonの読み込みを開始');
     setIsLoading(true);
     // キャッシュバスティング: タイムスタンプを追加して最新のファイルを取得
     const timestamp = new Date().getTime();
-    const url = `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
+    
+    // 環境に応じてURLを切り替え
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const basePath = process.env.PUBLIC_URL || '';
+    
+    const url = isLocalhost
+      ? `${basePath}/data/text-list.json?t=${timestamp}`
+      : `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
+    
     console.log('[ロード] URL:', url);
     
     fetch(url, {
@@ -381,7 +477,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
         <div className={styles.selectionGrid}>
           <div className={styles.selectionBlock}>
             <label className={styles.sectionLabel} htmlFor="grade-select">
-              文章選択
+              学年選択
             </label>
             <select
               id="grade-select"
@@ -397,18 +493,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
             </select>
             <button
               type="button"
-              className={`button ${styles.addButton}`}
-              onClick={() => setIsUploadModalOpen(true)}
+              className={`button ${styles.manageButton}`}
+              onClick={() => setIsManageModalOpen(true)}
             >
-              文章追加
-            </button>
-
-            <button
-              type="button"
-              className={`button ${styles.deleteButton}`}
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              文章削除
+              📝 文章リスト変更
             </button>
           </div>
 
@@ -425,14 +513,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
                   title="リストを更新（キャッシュクリア）"
                 >
                   🔄
-                </button>
-                <button
-                  type="button"
-                  className={styles.regenerateButton}
-                  onClick={() => reloadTextList(0, true)}
-                  title="GitHubから最新のファイル一覧を取得してtext-list.jsonを再生成"
-                >
-                  ♻️
                 </button>
               </div>
             </div>
@@ -509,6 +589,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
             setProcessingMessage('');
           }, 20000);
         }}
+      />
+
+      <TextManageModal
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+        onAdd={() => setIsUploadModalOpen(true)}
+        onDelete={() => setIsDeleteModalOpen(true)}
+        onReorder={() => setIsReorderModalOpen(true)}
+        hasStories={!!selectedGradeInfo && selectedGradeInfo.stories.length > 0}
+        canReorder={!!selectedGradeInfo && selectedGradeInfo.stories.length > 1}
+      />
+
+      <TextReorderModal
+        isOpen={isReorderModalOpen}
+        onClose={() => setIsReorderModalOpen(false)}
+        stories={selectedGradeInfo?.stories || []}
+        gradeFolder={selectedGradeFolder}
+        gradeLabel={selectedGradeInfo?.label || ''}
+        onReorder={handleReorder}
       />
 
       <div className={styles.footer}>

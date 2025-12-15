@@ -70,7 +70,7 @@
 
 .storySelect {
   width: 100%;
-  min-height: 220px;
+  min-height: 320px;
   padding: var(--spacing-sm);
   font-size: var(--font-size-medium);
   border: 1px solid var(--color-text);
@@ -101,6 +101,32 @@
   cursor: not-allowed;
 }
 
+.manageButton {
+  margin-top: var(--spacing-sm);
+  width: 100%;
+  height: 50px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+  background-color: #2196f3;
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.manageButton:hover {
+  background-color: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+.manageButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
 .addButton {
   margin-top: var(--spacing-sm);
   width: 100%;
@@ -123,6 +149,25 @@
 
 .deleteButton:hover {
   background-color: #d32f2f;
+}
+
+.reorderButton {
+  margin-top: var(--spacing-sm);
+  width: 100%;
+  height: 50px;
+  font-size: var(--font-size-small);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+  background-color: #ff9800;
+  color: var(--color-white);
+}
+
+.reorderButton:hover:not(:disabled) {
+  background-color: #fb8c00;
+}
+
+.reorderButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .refreshButtons {
