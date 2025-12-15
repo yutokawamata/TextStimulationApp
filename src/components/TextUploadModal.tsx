@@ -133,7 +133,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
   ): Promise<void> => {
     const githubOwner = process.env.REACT_APP_GITHUB_OWNER || 'yutokawamata';
     const githubRepo = process.env.REACT_APP_GITHUB_REPO || 'TextStimulationApp';
-    const githubBranch = process.env.REACT_APP_GITHUB_BRANCH || 'main';
+    const githubBranch = 'gh-pages'; // デプロイ先のブランチ
 
     if (!token) {
       throw new Error('GitHub Personal Access Tokenが入力されていません。');
@@ -194,27 +194,74 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
     message: string,
     token: string
   ): Promise<void> => {
+    const githubOwner = process.env.REACT_APP_GITHUB_OWNER || 'yutokawamata';
+    const githubRepo = process.env.REACT_APP_GITHUB_REPO || 'TextStimulationApp';
+    const githubBranch = 'gh-pages';
+
+    // バイナリファイルをBase64エンコード
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     const binaryString = String.fromCharCode.apply(null, Array.from(uint8Array));
     const base64Content = btoa(binaryString);
 
-    await uploadFileToGitHub(path, base64Content, message, token);
+    // 既存ファイルのSHAを取得（存在する場合）
+    let sha: string | undefined;
+    try {
+      const getResponse = await fetch(
+        `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}?ref=${githubBranch}`,
+        {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        }
+      );
+      if (getResponse.ok) {
+        const fileData = await getResponse.json();
+        sha = fileData.sha;
+      }
+    } catch {
+      // ファイルが存在しない場合は無視
+    }
+
+    // バイナリファイルをアップロード
+    const response = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          content: base64Content,
+          branch: githubBranch,
+          ...(sha && { sha }),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `GitHub APIエラー: ${response.status}`);
+    }
   };
 
   // text-list.jsonを更新する関数
   const updateTextListJson = async (gradeFolder: string, storyFileName: string, storyLabel: string, token: string): Promise<void> => {
     const githubOwner = process.env.REACT_APP_GITHUB_OWNER || 'yutokawamata';
     const githubRepo = process.env.REACT_APP_GITHUB_REPO || 'TextStimulationApp';
-    const githubBranch = process.env.REACT_APP_GITHUB_BRANCH || 'main';
+    const githubBranch = 'gh-pages'; // デプロイ先のブランチ
 
     if (!token) {
       throw new Error('GitHub Personal Access Tokenが入力されていません。');
     }
 
-    // 現在のtext-list.jsonを取得
+    // 現在のtext-list.jsonを取得（gh-pagesブランチから）
     const getResponse = await fetch(
-      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/public/data/text-list.json?ref=${githubBranch}`,
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json?ref=${githubBranch}`,
       {
         headers: {
           'Authorization': `token ${token}`,
@@ -228,7 +275,15 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
     }
 
     const fileData = await getResponse.json();
-    const currentContent = JSON.parse(atob(fileData.content.replace(/\s/g, '')));
+    // Base64デコード（UTF-8対応）
+    const base64Content = fileData.content.replace(/\s/g, '');
+    const binaryString = atob(base64Content);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const decodedContent = new TextDecoder('utf-8').decode(bytes);
+    const currentContent = JSON.parse(decodedContent);
 
     // 新しい文章を追加
     const gradeIndex = currentContent.grades.findIndex((g: any) => g.folder === gradeFolder);
@@ -256,14 +311,41 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
       });
     }
 
-    // text-list.jsonを更新
+    // text-list.jsonを更新（gh-pagesブランチに）
     const updatedContent = JSON.stringify(currentContent, null, 2);
-    await uploadFileToGitHub(
-      'public/data/text-list.json',
-      updatedContent,
-      `Add new text: ${storyLabel}`,
-      token
+    
+    // Base64エンコード（UTF-8対応）
+    const encoder = new TextEncoder();
+    const utf8Bytes = encoder.encode(updatedContent);
+    let binaryStr = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binaryStr += String.fromCharCode(utf8Bytes[i]);
+    }
+    const base64Encoded = btoa(binaryStr);
+    
+    // gh-pagesブランチに直接アップロード
+    const updateResponse = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Add new text: ${storyLabel}`,
+          content: base64Encoded,
+          sha: fileData.sha,
+          branch: githubBranch,
+        }),
+      }
     );
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
+      throw new Error(`text-list.jsonの更新に失敗しました: ${errorData.message}`);
+    }
   };
 
   // アップロード処理
@@ -297,35 +379,44 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
       const storyFolderName = textFileName.replace(/\.txt$/, '');
       const storyLabel = storyFolderName; // ファイル名をラベルとして使用（必要に応じて変更可能）
 
+      console.log('[アップロード処理] 開始:', { selectedGrade, textFileName, storyFolderName, voiceFilesCount: voiceFiles.length });
+
       // GitHub APIを使用してアップロード
       const textFileContent = await textFile.text();
       
-      // テキストファイルをアップロード
+      // テキストファイルをアップロード（gh-pagesブランチに）
+      console.log('[アップロード処理] テキストファイルをアップロード中:', `data/text/${selectedGrade}/${textFileName}`);
       await uploadFileToGitHub(
-        `public/data/text/${selectedGrade}/${textFileName}`,
+        `data/text/${selectedGrade}/${textFileName}`,
         textFileContent,
         `Add text file: ${textFileName}`,
         githubToken
       );
+      console.log('[アップロード処理] テキストファイルのアップロード完了');
 
-      // 音声ファイルをアップロード
-      for (const voiceFile of voiceFiles) {
+      // 音声ファイルをアップロード（gh-pagesブランチに）
+      console.log('[アップロード処理] 音声ファイルをアップロード中:', voiceFiles.length, '個');
+      for (let i = 0; i < voiceFiles.length; i++) {
+        const voiceFile = voiceFiles[i];
+        console.log(`[アップロード処理] 音声ファイル ${i + 1}/${voiceFiles.length}:`, voiceFile.name);
         await uploadBinaryFileToGitHub(
-          `public/data/voice/${selectedGrade}/${storyFolderName}/${voiceFile.name}`,
+          `data/voice/${selectedGrade}/${storyFolderName}/${voiceFile.name}`,
           voiceFile,
           `Add voice file: ${voiceFile.name}`,
           githubToken
         );
       }
+      console.log('[アップロード処理] 音声ファイルのアップロード完了');
 
       // text-list.jsonを更新
+      console.log('[アップロード処理] text-list.jsonを更新中');
       await updateTextListJson(selectedGrade, textFileName, storyLabel, githubToken);
+      console.log('[アップロード処理] text-list.jsonの更新完了');
 
-      alert('ファイルをGitHubにアップロードしました！');
+      console.log('[アップロード処理] すべてのアップロード処理が完了しました');
 
-      // 成功時の処理
+      // 成功時の処理（親コンポーネントでモーダルを閉じる）
       onUploadSuccess();
-      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ファイルの処理に失敗しました。');
       console.error('エラー:', err);
@@ -337,11 +428,11 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={isUploading ? undefined : onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>文章追加</h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className={styles.closeButton} onClick={onClose} disabled={isUploading}>
             ×
           </button>
         </div>
@@ -356,6 +447,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               className={styles.select}
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
+              disabled={isUploading}
             >
               <option value="">選択してください</option>
               {grades.map((grade) => (
@@ -377,6 +469,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               accept=".txt"
               onChange={handleTextFileChange}
               className={styles.fileInput}
+              disabled={isUploading}
             />
             {textFile && (
               <p className={styles.fileName}>選択中: {textFile.name}</p>
@@ -396,6 +489,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               multiple
               onChange={handleVoiceFolderChange}
               className={styles.fileInput}
+              disabled={isUploading}
             />
             {voiceFiles.length > 0 && (
               <p className={styles.fileName}>
@@ -420,6 +514,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               onChange={(e) => setGithubToken(e.target.value)}
               placeholder="GitHub Personal Access Tokenを入力"
               className={styles.textInput}
+              disabled={isUploading}
             />
             <p className={styles.helpText}>
               取得方法: GitHub &gt; Settings &gt; Developer settings &gt; Personal access tokens &gt; Tokens (classic)

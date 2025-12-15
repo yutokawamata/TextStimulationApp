@@ -4,7 +4,7 @@ import styles from '../styles/components/AppSelector.module.css';
 /**
  * アプリ選択画面コンポーネント
  * 
- * かんじチャレンジと文章刺激アプリの選択画面を表示します。
+ * かんじチャレンジと文章刺激アプリの選択画面を表示します
  */
 interface AppSelectorProps {
   onSelectKanji: () => void;

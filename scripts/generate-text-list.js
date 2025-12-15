@@ -15,7 +15,7 @@ function getTextFiles(gradeFolder) {
 
   const files = fs.readdirSync(gradePath);
   return files
-    .filter(file => file.endsWith('.txt'))
+    .filter(file => file.endsWith('.txt') && file !== 'placeholder.txt')
     .map(file => {
       // ファイル名から拡張子を除いてラベルを生成
       const label = file.replace('.txt', '');

@@ -103,19 +103,14 @@ const App = () => {
     }
 
   // 漢字アプリ（iframe表示）
+  // iframeの中に漢字チャレンジアプリのナビバーがあるため、
+  // TextStimulationAppのNaviは表示しない
   if (currentApp === 'kanji') {
     return (
-      <>
-        <Navi
-          currentApp={currentApp}
-          showStartScreen={showStartScreen}
-          onBackToHome={handleBackToHome}
-        />
-        <KanjiAppViewer
-          kanjiAppUrl={KANJI_APP_URL}
-          onBack={handleBackToHome}
-        />
-      </>
+      <KanjiAppViewer
+        kanjiAppUrl={KANJI_APP_URL}
+        onBack={handleBackToHome}
+      />
     );
   }
 

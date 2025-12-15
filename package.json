@@ -25,7 +25,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "generate-text-list": "node scripts/generate-text-list.js",
-    "predeploy": "npm run generate-text-list && npm run build",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },
   "devDependencies": {
