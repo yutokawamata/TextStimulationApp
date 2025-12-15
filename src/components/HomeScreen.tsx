@@ -45,6 +45,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
+  const reloadTimeoutRef = React.useRef<number | null>(null);
 
   // ファイル一覧を読み込む
   useEffect(() => {
@@ -103,59 +104,257 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
     });
   };
 
-  // ファイル一覧を再読み込み
-  const reloadTextList = (delay: number = 0) => {
-    // GitHub Pages側の更新が反映されるまで少し待つ
-    setTimeout(() => {
-      setIsLoading(true);
-      // キャッシュバスティング: タイムスタンプを追加して最新のファイルを取得
-      const timestamp = new Date().getTime();
-      const url = `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
-      fetch(url, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+  // GitHub APIでファイル一覧を取得してtext-list.jsonを再生成
+  const regenerateTextListJson = async (token: string): Promise<void> => {
+    const githubOwner = process.env.REACT_APP_GITHUB_OWNER || 'yutokawamata';
+    const githubRepo = process.env.REACT_APP_GITHUB_REPO || 'TextStimulationApp';
+    const githubBranch = 'gh-pages';
+    const gradeOrder = ['1年生', '2年生', '3年生', '4年生', '5年生', '6年生'];
+
+    // 各学年フォルダからファイル一覧を取得
+    const newGrades: GradeInfo[] = [];
+    
+    for (const gradeFolder of gradeOrder) {
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text/${gradeFolder}?ref=${githubBranch}`,
+          {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+            },
+          }
+        );
+
+        if (response.ok) {
+          const files = await response.json();
+          
+          // .txtファイルのみ抽出（placeholder.txtを除く）
+          const stories: StoryInfo[] = files
+            .filter((file: any) => 
+              file.type === 'file' && 
+              file.name.endsWith('.txt') && 
+              file.name !== 'placeholder.txt'
+            )
+            .map((file: any) => ({
+              filename: file.name,
+              label: file.name.replace('.txt', '')
+            }))
+            .sort((a: StoryInfo, b: StoryInfo) => 
+              a.filename.localeCompare(b.filename, 'ja')
+            );
+
+          newGrades.push({
+            folder: gradeFolder,
+            label: gradeFolder,
+            stories: stories
+          });
         }
+      } catch (error) {
+        console.warn(`学年フォルダ ${gradeFolder} の取得に失敗:`, error);
+        // エラーでも続行（空の学年として追加）
+        newGrades.push({
+          folder: gradeFolder,
+          label: gradeFolder,
+          stories: []
+        });
+      }
+    }
+
+    // 現在のtext-list.jsonのSHAを取得
+    const getResponse = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json?ref=${githubBranch}`,
+      {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (!getResponse.ok) {
+      throw new Error('text-list.jsonの取得に失敗しました。');
+    }
+
+    const fileData = await getResponse.json();
+    
+    // 新しいtext-list.jsonの内容を生成
+    const newContent = { grades: newGrades };
+    const updatedContent = JSON.stringify(newContent, null, 2);
+    
+    // Base64エンコード（UTF-8対応）
+    const encoder = new TextEncoder();
+    const utf8Bytes = encoder.encode(updatedContent);
+    let binaryStr = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binaryStr += String.fromCharCode(utf8Bytes[i]);
+    }
+    const base64Encoded = btoa(binaryStr);
+    
+    // text-list.jsonを更新
+    const updateResponse = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/text-list.json`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Regenerate text-list.json from repository files',
+          content: base64Encoded,
+          sha: fileData.sha,
+          branch: githubBranch,
+        }),
+      }
+    );
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
+      throw new Error(`text-list.jsonの更新に失敗しました: ${errorData.message}`);
+    }
+  };
+
+  // ファイル一覧を再読み込み
+  const reloadTextList = async (delay: number = 0, regenerate: boolean = false) => {
+    // regenerate=trueの場合、GitHub APIでtext-list.jsonを再生成
+    if (regenerate) {
+      const token = prompt('GitHub Personal Access Tokenを入力してください:');
+      if (!token) {
+        alert('トークンが入力されていないため、リロードをキャンセルしました。');
+        return;
+      }
+
+      setIsProcessing(true);
+      setProcessingMessage('GitHubから最新のファイル一覧を取得しています...\ntext-list.jsonを再生成中...');
+
+      try {
+        console.log('[再生成] text-list.jsonの再生成を開始');
+        await regenerateTextListJson(token);
+        console.log('[再生成] text-list.jsonの再生成完了');
+        
+        setProcessingMessage('text-list.json更新完了！\n画面を更新しています...\n（約20秒お待ちください）');
+        
+        // GitHub Pages側の更新が反映されるまで待つ
+        console.log('[再生成] 20秒後にリロードします');
+        window.location.hash = 'regenerate'; // リロード完了を識別するためのフラグ
+        
+        // 既存のタイムアウトがあればクリア
+        if (reloadTimeoutRef.current !== null) {
+          clearTimeout(reloadTimeoutRef.current);
+        }
+        
+        reloadTimeoutRef.current = window.setTimeout(() => {
+          console.log('[再生成] リロードを実行');
+          loadTextListFromGitHubPages();
+          reloadTimeoutRef.current = null;
+        }, 20000);
+
+      } catch (error) {
+        console.error('[再生成] text-list.jsonの再生成に失敗しました:', error);
+        alert(`エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        setIsProcessing(false);
+        setProcessingMessage('');
+      }
+    } else {
+      // 通常のリロード（text-list.jsonを読み込むだけ）
+      console.log('[リロード] 通常リロードを実行');
+      
+      // 既存のタイムアウトがあればクリア
+      if (reloadTimeoutRef.current !== null) {
+        clearTimeout(reloadTimeoutRef.current);
+      }
+      
+      if (delay > 0) {
+        reloadTimeoutRef.current = window.setTimeout(() => {
+          loadTextListFromGitHubPages();
+          reloadTimeoutRef.current = null;
+        }, delay);
+      } else {
+        loadTextListFromGitHubPages();
+      }
+    }
+  };
+  
+  // クリーンアップ: コンポーネントがアンマウントされる時にタイムアウトをクリア
+  useEffect(() => {
+    return () => {
+      if (reloadTimeoutRef.current !== null) {
+        clearTimeout(reloadTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // GitHub Pagesからtext-list.jsonを読み込む
+  const loadTextListFromGitHubPages = () => {
+    console.log('[ロード] text-list.jsonの読み込みを開始');
+    setIsLoading(true);
+    // キャッシュバスティング: タイムスタンプを追加して最新のファイルを取得
+    const timestamp = new Date().getTime();
+    const url = `https://yutokawamata.github.io/TextStimulationApp/data/text-list.json?t=${timestamp}`;
+    console.log('[ロード] URL:', url);
+    
+    fetch(url, {
+      cache: 'no-cache',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
+      .then(response => {
+        console.log('[ロード] レスポンス取得:', response.status);
+        return response.json();
       })
-        .then(response => response.json())
-        .then((data: TextListData) => {
-          setTextListData(data);
+      .then((data: TextListData) => {
+        console.log('[ロード] データ取得完了:', data);
+        setTextListData(data);
+        
+        // 現在選択されている学年を保持
+        const currentGrade = data.grades.find(g => g.folder === selectedGradeFolder);
+        
+        if (currentGrade) {
+          // 現在の学年が存在する場合、選択を維持
+          setSelectedGradeFolder(currentGrade.folder);
           
-          // 現在選択されている学年を保持
-          const currentGrade = data.grades.find(g => g.folder === selectedGradeFolder);
+          // 現在選択されているストーリーがまだ存在するか確認
+          const currentStory = currentGrade.stories.find(s => s.filename === selectedStoryFilename);
           
-          if (currentGrade) {
-            // 現在の学年が存在する場合、選択を維持
-            setSelectedGradeFolder(currentGrade.folder);
-            
-            // 現在選択されているストーリーがまだ存在するか確認
-            const currentStory = currentGrade.stories.find(s => s.filename === selectedStoryFilename);
-            
-            if (!currentStory) {
-              // 削除された場合は、その学年の最初のストーリーを選択（または空）
-              if (currentGrade.stories.length > 0) {
-                setSelectedStoryFilename(currentGrade.stories[0].filename);
-              } else {
-                setSelectedStoryFilename('');
-              }
-            }
-          } else if (data.grades.length > 0) {
-            // 現在の学年が存在しない場合は、最初の学年を選択
-            const firstGrade = data.grades[0];
-            setSelectedGradeFolder(firstGrade.folder);
-            if (firstGrade.stories.length > 0) {
-              setSelectedStoryFilename(firstGrade.stories[0].filename);
+          if (!currentStory) {
+            // 削除された場合は、その学年の最初のストーリーを選択（または空）
+            if (currentGrade.stories.length > 0) {
+              setSelectedStoryFilename(currentGrade.stories[0].filename);
+            } else {
+              setSelectedStoryFilename('');
             }
           }
-          
-          setIsLoading(false);
-        })
-        .catch(error => {
-          console.error('ファイル一覧の読み込みに失敗しました:', error);
-          setIsLoading(false);
-        });
-    }, delay);
+        } else if (data.grades.length > 0) {
+          // 現在の学年が存在しない場合は、最初の学年を選択
+          const firstGrade = data.grades[0];
+          setSelectedGradeFolder(firstGrade.folder);
+          if (firstGrade.stories.length > 0) {
+            setSelectedStoryFilename(firstGrade.stories[0].filename);
+          }
+        }
+        
+        console.log('[ロード] UIを更新完了');
+        setIsLoading(false);
+        setIsProcessing(false);
+        setProcessingMessage('');
+        
+        // リロード完了を通知（再生成の場合のみ）
+        if (window.location.hash === '#regenerate') {
+          alert('text-list.jsonの再生成とリロードが完了しました！');
+          window.location.hash = '';
+        }
+      })
+      .catch(error => {
+        console.error('[ロード] ファイル一覧の読み込みに失敗しました:', error);
+        setIsLoading(false);
+        setIsProcessing(false);
+        setProcessingMessage('');
+        alert('リロードに失敗しました。もう一度お試しください。');
+      });
   };
 
   if (isLoading) {
@@ -218,14 +417,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
               <label className={styles.sectionLabel} htmlFor="story-select">
                 文章リスト
               </label>
-              <button
-                type="button"
-                className={styles.refreshButton}
-                onClick={() => reloadTextList(0)}
-                title="リストを更新"
-              >
-                🔄
-              </button>
+              <div className={styles.refreshButtons}>
+                <button
+                  type="button"
+                  className={styles.refreshButton}
+                  onClick={() => reloadTextList(0, false)}
+                  title="リストを更新（キャッシュクリア）"
+                >
+                  🔄
+                </button>
+                <button
+                  type="button"
+                  className={styles.regenerateButton}
+                  onClick={() => reloadTextList(0, true)}
+                  title="GitHubから最新のファイル一覧を取得してtext-list.jsonを再生成"
+                >
+                  ♻️
+                </button>
+              </div>
             </div>
             <select
               id="story-select"

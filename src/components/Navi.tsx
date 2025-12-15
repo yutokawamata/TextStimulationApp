@@ -16,23 +16,43 @@ const AlertMessage = ({ message, onClose }: { message: string; onClose: () => vo
 };
 
 /**
+ * ナビゲーションボタンの設定
+ */
+interface NavigationButton {
+  text: string;
+  onClick: () => void;
+}
+
+/**
+ * ナビゲーション設定の型
+ */
+interface NavigationConfig {
+  showBackButton: boolean;
+  backButtonAction?: () => void;
+  backButtonText?: string;
+  showButtons: NavigationButton[];
+}
+
+/**
  * ナビゲーションの状態に基づいてボタンの設定を決定する
  * @param currentApp - 現在のアプリ状態 ('selector' | 'kanji' | 'text' | 'text_home' | 'mode_selection' | 'completion')
  * @param showStartScreen - スタート画面の状態 (0: スタート画面, 1: 文節表示画面)
- * @param onBackToHome - ホームに戻る関数
+ * @param onBackToHome - アプリ選択画面に戻る関数
+ * @param onBackToTextHome - 文章選択画面に戻る関数
  * @returns 表示するボタンの設定
  */
 const getNavigationConfig = (
   currentApp: 'selector' | 'kanji' | 'text' | 'text_home' | 'mode_selection' | 'completion',
   showStartScreen: number,
-  onBackToHome: () => void
-) => {
+  onBackToHome: () => void,
+  onBackToTextHome: () => void
+): NavigationConfig => {
   // アプリ選択画面: ナビバーを表示しない
   if (currentApp === 'selector') {
     return { showBackButton: false, showButtons: [] };
   }
 
-  // 漢字アプリ（iframe表示）: 戻るボタンのみ
+  // 漢字アプリ（iframe表示）: 戻るボタンのみ（アプリ選択画面へ）
   if (currentApp === 'kanji') {
     return {
       showBackButton: true,
@@ -41,63 +61,47 @@ const getNavigationConfig = (
     };
   }
 
-  // 文章刺激アプリのホーム画面: 戻るボタン + TOPへボタン
+  // 文章刺激アプリのホーム画面（文章選択画面）: カスタムボタン（アプリ選択画面へ）
   if (currentApp === 'text_home') {
     return {
       showBackButton: true,
       backButtonAction: onBackToHome,
-      showButtons: [{
-        text: 'TOPへ',
-        onClick: onBackToHome
-      }]
+      backButtonText: 'アプリ選択画面',
+      showButtons: []
     };
   }
 
-  // 文章刺激アプリのスタート画面: 戻るボタン + TOPへボタン
+  // 文章刺激アプリのスタート画面: ナビバー非表示
   if (currentApp === 'text' && showStartScreen === 0) {
     return {
-      showBackButton: true,
-      backButtonAction: onBackToHome,
-      showButtons: [{
-        text: 'TOPへ',
-        onClick: onBackToHome
-      }]
+      showBackButton: false,
+      showButtons: []
     };
   }
 
-  // 文章刺激アプリの文節表示画面: 戻るボタン + TOPへボタン
+  // 文章刺激アプリの文節表示画面（練習中）: ナビバー非表示
   if (currentApp === 'text' && showStartScreen === 1) {
     return {
-      showBackButton: true,
-      backButtonAction: onBackToHome,
-      showButtons: [{
-        text: 'TOPへ',
-        onClick: onBackToHome
-      }]
+      showBackButton: false,
+      showButtons: []
     };
   }
 
-  // モード選択画面: 戻るボタン + TOPへボタン
+  // モード選択画面: カスタムボタン（文章選択画面へ）
   if (currentApp === 'mode_selection') {
     return {
       showBackButton: true,
-      backButtonAction: onBackToHome,
-      showButtons: [{
-        text: 'TOPへ',
-        onClick: onBackToHome
-      }]
+      backButtonAction: onBackToTextHome,
+      backButtonText: '文章選択へ戻る',
+      showButtons: []
     };
   }
 
-  // 完了画面: 戻るボタン + TOPへボタン
+  // 完了画面: ナビバー非表示
   if (currentApp === 'completion') {
     return {
-      showBackButton: true,
-      backButtonAction: onBackToHome,
-      showButtons: [{
-        text: 'TOPへ',
-        onClick: onBackToHome
-      }]
+      showBackButton: false,
+      showButtons: []
     };
   }
 
@@ -112,12 +116,14 @@ interface NaviProps {
   currentApp: 'selector' | 'kanji' | 'text' | 'text_home' | 'mode_selection' | 'completion';
   showStartScreen: number;
   onBackToHome: () => void;
+  onBackToTextHome: () => void;
 }
 
 export const Navi: React.FC<NaviProps> = ({
   currentApp,
   showStartScreen,
-  onBackToHome
+  onBackToHome,
+  onBackToTextHome
 }) => {
   // アラート表示のための状態
   const [alertMessage, setAlertMessage] = useState('');
@@ -133,7 +139,12 @@ export const Navi: React.FC<NaviProps> = ({
     return null;
   }
 
-  const config = getNavigationConfig(currentApp, showStartScreen, onBackToHome);
+  const config = getNavigationConfig(currentApp, showStartScreen, onBackToHome, onBackToTextHome);
+
+  // ナビバーを表示しない場合
+  if (!config.showBackButton && (!config.showButtons || config.showButtons.length === 0)) {
+    return null;
+  }
 
   return (
     <>
@@ -145,7 +156,7 @@ export const Navi: React.FC<NaviProps> = ({
               className={styles.button}
               onClick={config.backButtonAction}
             >
-              ＜戻る
+              {config.backButtonText || '＜戻る'}
             </button>
           )}
         </div>

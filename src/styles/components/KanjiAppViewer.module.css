@@ -1,0 +1,56 @@
+/* 全体コンテナ */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ナビゲーションバー */
+.navbar {
+  height: 50px;
+  background-color: var(--color-white, #ffffff);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 var(--spacing-lg, 16px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+/* 戻るボタン */
+.backButton {
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  background-color: var(--color-white, #ffffff);
+  font-size: var(--font-size-medium, 16px);
+  color: blue;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  font-family: inherit;
+}
+
+.backButton:hover {
+  opacity: 0.8;
+}
+
+/* iframeコンテナ */
+.iframeContainer {
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 50px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* iframe */
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}

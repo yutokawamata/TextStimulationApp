@@ -65,6 +65,12 @@ const App = () => {
     setShowStartScreen(0);
   };
 
+  // 文章選択画面に戻る
+  const handleBackToTextHome = () => {
+    setCurrentApp('text_home');
+    setShowStartScreen(0);
+  };
+
   // 文章練習が終了した時の処理
   // 全文節モードの場合は完了画面に遷移、それ以外はモード選択画面に遷移
   const handleTextDisplayComplete = (elapsedTimeMs?: number) => {
@@ -122,6 +128,7 @@ const App = () => {
           currentApp={currentApp}
           showStartScreen={showStartScreen}
           onBackToHome={handleBackToHome}
+          onBackToTextHome={handleBackToTextHome}
         />
         <HomeScreen
           onProceed={handleProceedToTextApp}
@@ -135,36 +142,22 @@ const App = () => {
   if (currentApp === 'text') {
   if (showStartScreen === 0) {
       return (
-        <>
-          <Navi
-            currentApp={currentApp}
-            showStartScreen={showStartScreen}
-            onBackToHome={handleBackToHome}
-          />
-          <StartScreen
-            onStart={handleStartReading}
-            onBack={handleBackToHome}
-            voiceMode={textAppSettings?.voiceMode}
-          />
-        </>
+        <StartScreen
+          onStart={handleStartReading}
+          onBack={handleBackToTextHome}
+          voiceMode={textAppSettings?.voiceMode}
+        />
       );
     }
 
-    // 文節表示画面
+    // 文節表示画面（練習中）
     // TextDisplayコンポーネント内でテキストファイルを読み込む
     return (
-      <>
-        <Navi
-          currentApp={currentApp}
-          showStartScreen={showStartScreen}
-          onBackToHome={handleBackToHome}
-        />
-        <TextDisplay
-          textAppSettings={textAppSettings}
-          onBack={handleBackToHome}
-          onComplete={handleTextDisplayComplete}
-        />
-      </>
+      <TextDisplay
+        textAppSettings={textAppSettings}
+        onBack={handleBackToTextHome}
+        onComplete={handleTextDisplayComplete}
+      />
     );
   }
 
@@ -176,10 +169,11 @@ const App = () => {
           currentApp={currentApp}
           showStartScreen={showStartScreen}
           onBackToHome={handleBackToHome}
+          onBackToTextHome={handleBackToTextHome}
         />
         <ModeSelectionScreen
           onProceed={handleModeSelectionProceed}
-          onBack={handleBackToHome}
+          onBack={handleBackToTextHome}
           currentVoiceMode={textAppSettings?.voiceMode}
         />
       </>
@@ -189,20 +183,13 @@ const App = () => {
   // 完了画面（全文節モードのみ）
   if (currentApp === 'completion') {
     return (
-      <>
-        <Navi
-          currentApp={currentApp}
-          showStartScreen={showStartScreen}
-          onBackToHome={handleBackToHome}
-        />
-        <CompletionScreen
-          elapsedTime={elapsedTime}
-          onFinish={() => {
-            // 「おわり」ボタンが押されたら文章選択画面（HomeScreen）に戻る
-            setCurrentApp('text_home');
-          }}
-        />
-      </>
+      <CompletionScreen
+        elapsedTime={elapsedTime}
+        onFinish={() => {
+          // 「おわり」ボタンが押されたら文章選択画面（HomeScreen）に戻る
+          handleBackToTextHome();
+        }}
+      />
     );
   }
 
