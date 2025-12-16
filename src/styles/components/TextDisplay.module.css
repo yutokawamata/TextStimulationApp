@@ -30,9 +30,10 @@
   justify-content: flex-start; /* 主軸（垂直方向）の開始 = 上側 */
   padding-top: 30px; /* ナビバーの下に30pxの余白 */
   padding-right: 50px; /* 右側に50pxの余白 */
-  padding-bottom: 150px; /* ボタンが表示されるスペースを確保（余裕を持たせる） */
+  padding-bottom: 120px; /* ボタンが表示されるスペースを確保（小さく） */
+  padding-left: 20px; /* 左側の余白を追加（ボタンとの余白） */
   margin-top: 0; /* 上部マージンを0に */
-  min-height: 100vh; /* 最小高さを100vhに（コンテンツが長い場合は伸びる） */
+  min-height: 100vh; /* 最小高さを100vhに */
   background-color: var(--color-background);
   align-content: flex-start; /* 複数行の場合も上寄せ */
   overflow-y: auto; /* 縦スクロールを有効にする */
@@ -73,6 +74,7 @@
 .textColumn {
   display: flex;
   flex-direction: row; /* 縦書きではrowが縦方向（上から下）になる */
+  align-items: flex-end; /* 横方向（縦書きでは左端）に揃える - ルビの有無に関係なく本文を左端に揃える */
   writing-mode: vertical-rl; /* 縦書き表示 */
   text-orientation: upright; /* 文字を正立させる */
   color: var(--color-text);
@@ -82,7 +84,7 @@
 
 /* 文節: インラインブロック要素として表示 */
 .textSegment {
-  display: block; /* flexコンテナ内ではflex-itemとして扱われる */
+  display: inline-block; /* inline-blockに変更して幅を内容に合わせる */
   margin-top: 4px; /* 縦書きでは上下の余白（文節間の空白）- 狭めに調整 */
   margin-bottom: 4px; /* 縦書きでは上下の余白（文節間の空白）- 狭めに調整 */
   margin-left: 0; /* 縦書きでは左右の余白は不要 */
@@ -91,6 +93,7 @@
   transition: opacity 0.3s ease-in-out; /* 透明度の変化にアニメーション効果を追加（0.3秒でスムーズに変化） */
   font-size: 30px; /* フォントサイズを大きく（24px → 30px） */
   line-height: 2.5; /* 全文節モード用: 行間を再設定 */
+  vertical-align: top; /* 上端揃え（縦書きでは右端揃え） */
 }
 
 /* 文節: 表示状態 */
@@ -110,8 +113,8 @@
 
 /* ふりがな（ルビ）のスタイル */
 .textSegment ruby {
-  ruby-align: center; /* ルビを中央揃え */
-  ruby-overhang: auto; /* ルビのオーバーハングを自動調整 */
+  ruby-align: start; /* ルビを左寄せ（縦書きでは右端寄せ）に変更 */
+  ruby-position: over; /* ルビを明示的に上（縦書きでは右側）に配置 */
 }
 
 .textSegment rt {
@@ -123,11 +126,12 @@
 
 /* 全文節モード用の「つぎへ」ボタン */
 .nextButton {
-  position: absolute;
-  bottom: 80px; /* 下部から80px上に配置（余裕を持たせる） */
-  left: 20px;
+  position: fixed; /* スクロールしても固定 */
+  bottom: 20px; /* 余白を小さく */
+  left: 20px; /* 左寄せに戻す */
   z-index: var(--z-index-nav);
   width: 320px;
+  max-width: calc(100vw - 40px); /* 画面幅に応じて調整 */
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -142,6 +146,21 @@
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
 }
 
+/* タブレット・スマートフォン用のボタン調整 */
+@media screen and (max-width: 1024px) {
+  .nextButton {
+    bottom: 15px;
+    width: 280px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .nextButton {
+    bottom: 10px;
+    width: 240px;
+  }
+}
+
 /* 改行のスタイル（縦書き用） */
 .lineBreak {
   display: block;
@@ -154,7 +173,38 @@
   /* 縦書きでは、block要素が次の列に移動する */
 }
 
-/* レスポンシブ対応: タブレット */
+/* レスポンシブ対応: 画面の高さに応じたフォントサイズ調整 */
+/* 高さ 900px未満: フォントサイズを少し小さく */
+@media screen and (max-height: 900px) {
+  .textSegment {
+    font-size: 26px;
+    line-height: 2.3;
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+}
+
+/* 高さ 700px未満: フォントサイズをさらに小さく */
+@media screen and (max-height: 700px) {
+  .textSegment {
+    font-size: 22px;
+    line-height: 2.2;
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+}
+
+/* 高さ 600px未満: フォントサイズを最小に */
+@media screen and (max-height: 600px) {
+  .textSegment {
+    font-size: 18px;
+    line-height: 2.0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+}
+
+/* レスポンシブ対応: タブレット（画面幅） */
 @media screen and (max-width: 1024px) {
   .textSegment {
     font-size: 26px; /* タブレット用のフォントサイズ */
@@ -163,12 +213,22 @@
   }
 }
 
-/* レスポンシブ対応: スマートフォン */
+/* レスポンシブ対応: スマートフォン（画面幅） */
 @media screen and (max-width: 768px) {
   .textSegment {
     font-size: 22px; /* スマートフォン用のフォントサイズ */
     margin-top: 3px;
     margin-bottom: 3px;
+  }
+}
+
+/* 高さと幅の両方が小さい場合（スマホ横向きなど） */
+@media screen and (max-width: 768px) and (max-height: 600px) {
+  .textSegment {
+    font-size: 18px;
+    line-height: 2.0;
+    margin-top: 2px;
+    margin-bottom: 2px;
   }
 }
 

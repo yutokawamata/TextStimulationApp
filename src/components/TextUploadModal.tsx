@@ -4,7 +4,8 @@ import styles from '../styles/components/TextUploadModal.module.css';
 interface TextUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  grades: Array<{ folder: string; label: string }>;
+  grades: Array<{ folder: string; label: string; stories: Array<{ filename: string; label: string }> }>;
+  initialGrade: string;
   onUploadSuccess: () => void;
 }
 
@@ -12,24 +13,48 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
   isOpen,
   onClose,
   grades,
+  initialGrade,
   onUploadSuccess,
 }) => {
   const [selectedGrade, setSelectedGrade] = useState<string>('');
   const [textFile, setTextFile] = useState<File | null>(null);
   const [voiceFiles, setVoiceFiles] = useState<File[]>([]);
-  const [githubToken, setGithubToken] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const textFileInputRef = useRef<HTMLInputElement>(null);
   const voiceFolderInputRef = useRef<HTMLInputElement>(null);
 
+  // モーダルが開かれたときに初期学年を設定
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedGrade(initialGrade);
+    }
+  }, [isOpen, initialGrade]);
+
+  // 学年が変更されたときに重複チェックを再実行
+  React.useEffect(() => {
+    if (textFile && selectedGrade) {
+      const selectedGradeData = grades.find(g => g.folder === selectedGrade);
+      if (selectedGradeData) {
+        const isDuplicate = selectedGradeData.stories.some(
+          story => story.filename === textFile.name
+        );
+        if (isDuplicate) {
+          setError(`この学年には既に「${textFile.name.replace('.txt', '')}」という文章が存在します。\n別の名前のファイルを選択してください。`);
+        } else if (error.includes('既に')) {
+          // 重複エラーがクリアされた場合
+          setError('');
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGrade, textFile, grades]);
+
   // モーダルが閉じられたときにリセット
   React.useEffect(() => {
     if (!isOpen) {
-      setSelectedGrade('');
       setTextFile(null);
       setVoiceFiles([]);
-      setGithubToken('');
       setError('');
       if (textFileInputRef.current) {
         textFileInputRef.current.value = '';
@@ -58,6 +83,41 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
       return;
     }
 
+    // 重複チェック: 同じ学年に同じ名前の文章が既に存在するか
+    if (selectedGrade) {
+      const selectedGradeData = grades.find(g => g.folder === selectedGrade);
+      if (selectedGradeData) {
+        const isDuplicate = selectedGradeData.stories.some(
+          story => story.filename === file.name
+        );
+        if (isDuplicate) {
+          setError(`この学年には既に「${file.name.replace('.txt', '')}」という文章が存在します。\n別の名前のファイルを選択してください。`);
+          setTextFile(null);
+          if (textFileInputRef.current) {
+            textFileInputRef.current.value = '';
+          }
+          return;
+        }
+      }
+    }
+
+    // 音声フォルダが既に選択されている場合、名前の一致チェック
+    if (voiceFiles.length > 0) {
+      const firstVoiceFile = voiceFiles[0];
+      const relativePath = (firstVoiceFile as any).webkitRelativePath || firstVoiceFile.name;
+      const voiceFolderName = relativePath.split('/')[0];
+      const expectedFolderName = file.name.replace(/\.txt$/, '');
+      
+      if (voiceFolderName !== expectedFolderName) {
+        setError(`テキストファイル名「${expectedFolderName}」が音声フォルダ名「${voiceFolderName}」と一致しません。\n\nテキストファイル名を「${voiceFolderName}.txt」に変更するか、音声フォルダを選び直してください。`);
+        setTextFile(null);
+        if (textFileInputRef.current) {
+          textFileInputRef.current.value = '';
+        }
+        return;
+      }
+    }
+
     setTextFile(file);
     setError('');
   };
@@ -81,6 +141,24 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
         voiceFolderInputRef.current.value = '';
       }
       return;
+    }
+
+    // 音声フォルダ名を取得（webkitRelativePathから）
+    const firstFile = files[0];
+    const relativePath = (firstFile as any).webkitRelativePath || firstFile.name;
+    const folderName = relativePath.split('/')[0]; // 例: "森へ行こう/001.wav" → "森へ行こう"
+
+    // テキストファイル名と音声フォルダ名の一致チェック
+    if (textFile) {
+      const expectedFolderName = textFile.name.replace(/\.txt$/, '');
+      if (folderName !== expectedFolderName) {
+        setError(`音声フォルダ名「${folderName}」がテキストファイル名「${expectedFolderName}」と一致しません。\n\n音声フォルダ名は「${expectedFolderName}」である必要があります。`);
+        setVoiceFiles([]);
+        if (voiceFolderInputRef.current) {
+          voiceFolderInputRef.current.value = '';
+        }
+        return;
+      }
     }
 
     // 音声ファイルの順番チェック（001.wavから順番になっているか）
@@ -366,8 +444,10 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
       return;
     }
 
-    if (!githubToken) {
-      setError('GitHub Personal Access Tokenを入力してください。');
+    // sessionStorageからトークンを取得
+    const githubToken = sessionStorage.getItem('github_token') || '';
+    if (!githubToken.trim()) {
+      setError('GitHub Personal Access Tokenが設定されていません。\n文章リスト変更画面でトークンを入力してください。');
       return;
     }
 
@@ -440,16 +520,14 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
         <div className={styles.content}>
           <div className={styles.formGroup}>
             <label className={styles.label} htmlFor="grade-select">
-              学年 <span className={styles.required}>*</span>
+              学年
             </label>
             <select
               id="grade-select"
               className={styles.select}
               value={selectedGrade}
-              onChange={(e) => setSelectedGrade(e.target.value)}
-              disabled={isUploading}
+              disabled={true}
             >
-              <option value="">選択してください</option>
               {grades.map((grade) => (
                 <option key={grade.folder} value={grade.folder}>
                   {grade.label}
@@ -471,6 +549,14 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               className={styles.fileInput}
               disabled={isUploading}
             />
+            <button
+              type="button"
+              className={styles.fileSelectButton}
+              onClick={() => textFileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              ファイル選択
+            </button>
             {textFile && (
               <p className={styles.fileName}>選択中: {textFile.name}</p>
             )}
@@ -491,6 +577,14 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               className={styles.fileInput}
               disabled={isUploading}
             />
+            <button
+              type="button"
+              className={styles.fileSelectButton}
+              onClick={() => voiceFolderInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              ファイル選択
+            </button>
             {voiceFiles.length > 0 && (
               <p className={styles.fileName}>
                 選択中: {voiceFiles.length}個のファイル
@@ -501,21 +595,6 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
                 </span>
               </p>
             )}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="github-token">
-              GitHub Personal Access Token <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="github-token"
-              type="password"
-              value={githubToken}
-              onChange={(e) => setGithubToken(e.target.value)}
-              placeholder="GitHub Personal Access Tokenを入力"
-              className={styles.textInput}
-              disabled={isUploading}
-            />
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
@@ -533,7 +612,7 @@ export const TextUploadModal: React.FC<TextUploadModalProps> = ({
               type="button"
               className={`button ${styles.uploadButton}`}
               onClick={handleUpload}
-              disabled={isUploading || !selectedGrade || !textFile || voiceFiles.length === 0 || !githubToken}
+              disabled={isUploading || !selectedGrade || !textFile || voiceFiles.length === 0 || !!error}
             >
               {isUploading ? 'アップロード中...' : 'アップロード'}
             </button>

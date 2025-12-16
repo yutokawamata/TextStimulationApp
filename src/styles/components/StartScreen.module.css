@@ -31,8 +31,8 @@
 
 /* スタートボタン: 共通のbuttonクラスに加えて、サイズと影をカスタマイズ */
 .startButton {
-  width: 320px;
-  height: 120px;
+  width: 340px;
+  height: 140px;
   font-size: var(--font-size-xlarge);
   font-weight: 600;
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
@@ -95,54 +95,87 @@
   margin-top: 0 !important; /* 列の最初の要素は上部余白なし */
 }
 
-/* タブレット・モバイル向けのレスポンシブデザイン */
+/* タブレット向け: 縦書きを維持してフォントサイズを縮小 */
 @media screen and (max-width: 1024px) {
-  /* コンテンツを縦並びに変更 */
   .content {
-    flex-direction: column; /* コンテンツを縦並びに */
-    gap: var(--spacing-xl); /* コンテンツ間のスペース */
-  }
-
-  /* 説明文を横書きに変更（モバイルでは縦書きが読みにくいため） */
-  .instructions {
-    writing-mode: horizontal-tb; /* 横書きに変更 */
-    text-orientation: mixed; /* 文字の向きを混合に */
-    flex-direction: column; /* 列を縦並びに */
-    gap: 8px; /* 列間のスペースを狭く（10px → 8px） */
-  }
-
-  /* 各列を横書きモードに */
-  .instructionColumn {
-    writing-mode: horizontal-tb; /* 横書きに変更 */
-    flex-direction: row; /* 横書きでは横並びに */
+    padding: 20px 30px var(--spacing-lg) var(--spacing-lg);
+    gap: var(--spacing-lg);
   }
 
   /* スタートボタンのサイズを調整 */
   .startButton {
-    width: var(--button-width-normal); /* ボタンの幅 */
-    height: var(--button-height); /* ボタンの高さ */
+    width: 280px;
+    height: 120px;
   }
 
-  /* タブレット用のフォントサイズ */
+  /* フォントサイズを縮小（縦書きは維持） */
   .instructionText {
     font-size: 26px;
-    line-height: 2.5; /* 練習画面に合わせる */
+    line-height: 2.3;
     margin-top: 3px;
     margin-bottom: 3px;
   }
+  
+  .instructions {
+    gap: 12px;
+  }
 }
 
-/* スマートフォン向けのレスポンシブデザイン */
+/* スマートフォン向け: さらにフォントサイズを縮小（縦書き維持） */
 @media screen and (max-width: 768px) {
+  .content {
+    padding: 15px 20px var(--spacing-md) var(--spacing-md);
+  }
+
+  .startButton {
+    width: 240px;
+    height: 100px;
+    font-size: var(--font-size-large);
+  }
+
   .instructionText {
     font-size: 22px;
-    line-height: 2.5; /* 練習画面に合わせる */
+    line-height: 2.2;
     margin-top: 3px;
     margin-bottom: 3px;
   }
   
   .instructions {
     gap: 10px;
+  }
+}
+
+/* 非常に小さい画面: レイアウト変更（スタートボタンを上、説明を下に縦書き） */
+@media screen and (max-width: 600px) {
+  .content {
+    flex-direction: column; /* 縦並びに変更 */
+    align-items: center; /* 中央揃え */
+    justify-content: flex-start; /* 上寄せ */
+    gap: var(--spacing-xl);
+    padding: var(--spacing-lg);
+  }
+
+  .leftSection {
+    order: 1; /* スタートボタンを上に */
+  }
+
+  .rightSection {
+    order: 2; /* 説明を下に */
+    justify-content: center; /* 中央揃え */
+  }
+
+  .startButton {
+    width: 280px;
+    height: 100px;
+  }
+
+  .instructionText {
+    font-size: 20px;
+    line-height: 2.0;
+  }
+  
+  .instructions {
+    gap: 8px;
   }
 }
 

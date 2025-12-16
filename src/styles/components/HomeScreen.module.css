@@ -1,10 +1,11 @@
 .container {
-  min-height: 100vh;
+  min-height: calc(100vh - 50px);
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
   background-color: var(--color-white);
+  box-sizing: border-box;
 }
 
 .backLink {
@@ -76,6 +77,10 @@
   border: 1px solid var(--color-text);
   border-radius: var(--border-radius-sm);
   background-color: var(--color-white);
+  /* iPad/モバイルでもリストボックス表示を強制 */
+  -webkit-appearance: listbox;
+  -moz-appearance: listbox;
+  appearance: listbox;
 }
 
 .voiceOptions {
@@ -108,7 +113,7 @@
   font-size: var(--font-size-small);
   font-weight: 600;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
-  background-color: #2196f3;
+  background-color: var(--color-secondary, #6c757d);
   color: var(--color-white);
   display: flex;
   align-items: center;
@@ -117,7 +122,7 @@
 }
 
 .manageButton:hover {
-  background-color: #1976d2;
+  background-color: #5a6268;
   transform: translateY(-2px);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
 }
@@ -216,13 +221,27 @@
   width: 100%;
   max-width: var(--container-width-large);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   font-size: var(--font-size-small);
   color: var(--color-text-light);
 }
 
+.versionInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
 .version {
   font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+.voiceCredit {
+  font-size: var(--font-size-small);
+  color: var(--color-text-light);
+  margin: 0;
 }
 
 @media screen and (max-width: 1024px) {

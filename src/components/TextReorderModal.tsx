@@ -60,17 +60,18 @@ export const TextReorderModal: React.FC<TextReorderModalProps> = ({
   };
 
   const handleSave = async () => {
-    const token = prompt('GitHub Personal Access Tokenを入力してください:');
-    if (!token) {
-      alert('トークンが入力されていないため、保存をキャンセルしました。');
+    // sessionStorageからトークンを取得
+    const token = sessionStorage.getItem('github_token') || '';
+    if (!token.trim()) {
+      alert('GitHub Personal Access Tokenが設定されていません。\n文章リスト変更画面でトークンを入力してください。');
       return;
     }
 
     setIsSaving(true);
     try {
       await onReorder(token, orderedStories);
-      alert('文章の並び替えを保存しました。');
       onClose();
+      alert('文章の並び替えを保存しました。\nリストに反映されるまで時間がかかる場合があります。');
     } catch (error) {
       console.error('並び替えの保存に失敗:', error);
       alert(`並び替えの保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);

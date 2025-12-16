@@ -47,6 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [modalTargetGrade, setModalTargetGrade] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const reloadTimeoutRef = React.useRef<number | null>(null);
@@ -299,9 +300,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
       const errorData = await updateResponse.json();
       throw new Error(`text-list.jsonの更新に失敗しました: ${errorData.message}`);
     }
-
-    // 更新後、リストを再読み込み
-    await reloadTextList();
   };
 
   // ファイル一覧を再読み込み
@@ -519,7 +517,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
             <select
               id="story-select"
               className={styles.storySelect}
-              size={5}
+              size={10}
               value={selectedStoryFilename}
               onChange={(event) => setSelectedStoryFilename(event.target.value)}
               disabled={!selectedGradeInfo || selectedGradeInfo.stories.length === 0}
@@ -563,15 +561,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         grades={textListData?.grades || []}
+        initialGrade={modalTargetGrade}
         onUploadSuccess={() => {
           setIsUploadModalOpen(false);
-          setIsProcessing(true);
-          setProcessingMessage('アップロード完了！リストを更新しています...\n（約20秒お待ちください）\n\n※ アップロード直後は、キャッシュの影響で新しい文章がリストに表示されない場合があります。時間が経てば自動的に表示されます。');
-          reloadTextList(20000);
-          setTimeout(() => {
-            setIsProcessing(false);
-            setProcessingMessage('');
-          }, 20000);
+          alert('文章を追加しました。\nリストに反映されるまで時間がかかる場合があります。');
         }}
       />
 
@@ -579,40 +572,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onProceed, onBack }) => 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         grades={textListData?.grades || []}
+        initialGrade={modalTargetGrade}
         onDeleteSuccess={() => {
           setIsDeleteModalOpen(false);
-          setIsProcessing(true);
-          setProcessingMessage('削除完了！リストを更新しています...\n（約20秒お待ちください）\n\n※ 削除直後は、キャッシュの影響で削除した文章がリストに表示される場合があります。時間が経てば自動的に消えます。');
-          reloadTextList(20000);
-          setTimeout(() => {
-            setIsProcessing(false);
-            setProcessingMessage('');
-          }, 20000);
+          alert('文章を削除しました。\nリストに反映されるまで時間がかかる場合があります。');
         }}
       />
 
       <TextManageModal
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
-        onAdd={() => setIsUploadModalOpen(true)}
-        onDelete={() => setIsDeleteModalOpen(true)}
-        onReorder={() => setIsReorderModalOpen(true)}
-        hasStories={!!selectedGradeInfo && selectedGradeInfo.stories.length > 0}
-        canReorder={!!selectedGradeInfo && selectedGradeInfo.stories.length > 1}
+        onAdd={(gradeFolder) => {
+          setModalTargetGrade(gradeFolder);
+          setIsUploadModalOpen(true);
+        }}
+        onDelete={(gradeFolder) => {
+          setModalTargetGrade(gradeFolder);
+          setIsDeleteModalOpen(true);
+        }}
+        onReorder={(gradeFolder) => {
+          setModalTargetGrade(gradeFolder);
+          setIsReorderModalOpen(true);
+        }}
+        grades={textListData?.grades || []}
+        initialGrade={selectedGradeFolder}
       />
 
       <TextReorderModal
         isOpen={isReorderModalOpen}
         onClose={() => setIsReorderModalOpen(false)}
-        stories={selectedGradeInfo?.stories || []}
-        gradeFolder={selectedGradeFolder}
-        gradeLabel={selectedGradeInfo?.label || ''}
+        stories={textListData?.grades.find(g => g.folder === modalTargetGrade)?.stories || []}
+        gradeFolder={modalTargetGrade}
+        gradeLabel={textListData?.grades.find(g => g.folder === modalTargetGrade)?.label || ''}
         onReorder={handleReorder}
       />
 
       <div className={styles.footer}>
-        <p>※音声はVOICEVOXを使用させていただいております。</p>
-        <span className={styles.version}>ver.20251012-1</span>
+        <div className={styles.versionInfo}>
+          <span className={styles.version}>ver.20251012-1</span>
+          <p className={styles.voiceCredit}>※音声はVOICEVOXを使用させていただいております。</p>
+        </div>
       </div>
 
       {/* 処理中オーバーレイ */}

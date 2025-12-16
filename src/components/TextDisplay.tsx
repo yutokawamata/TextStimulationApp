@@ -604,6 +604,12 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
       // 音声再生を有効化
       await enableAudio();
 
+      // 最初の文節の場合、音声バッファのロードを待つために遅延
+      if (currentSegment === 0) {
+        console.log('[音声再生] 最初の文節のため、500ms遅延します');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
       // 既存の音声を停止
       if (currentSourceRef.current) {
         try {
@@ -633,8 +639,22 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
       // AudioContextを使用して再生
       if (isAudioContextInitialized && audioContext) {
         try {
+          // AudioContextがsuspended状態の場合はresumeする
+          if (audioContext.state === 'suspended') {
+            console.log('[音声再生] AudioContextがsuspendedのため、resumeします');
+            await audioContext.resume();
+            // resume後、少し待つ
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+
           console.log('[音声再生] AudioContextで再生を試みます:', audioPath);
           const buffer = await loadAudioBuffer(audioPath);
+          
+          // バッファロード後、少し待つ（最初の文節のみ）
+          if (currentSegment === 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
           const source = audioContext!.createBufferSource();
           source.buffer = buffer;
           source.connect(audioContext!.destination);
@@ -1013,11 +1033,10 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
     return (
       <div ref={containerFullTextRef} className={styles.containerFullText}>
         <div ref={textDisplayFullTextRef} className={styles.textDisplayFullText}>
-          {/* セグメントを4文節ごとに列としてグループ化 */}
+          {/* セグメントを空行（改行）のみで列としてグループ化 */}
           {(() => {
             const columns: Segment[][] = [];
             let currentColumn: Segment[] = [];
-            const SEGMENTS_PER_COLUMN = 4; // 1列に4文節
             
             segments.forEach((segment) => {
               // 改行セグメントの場合は列を区切る
@@ -1027,12 +1046,8 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
                   currentColumn = [];
                 }
               } else {
+                // 改行がない限り同じ列に追加
                 currentColumn.push(segment);
-                // 4文節に達したら列を区切る
-                if (currentColumn.length >= SEGMENTS_PER_COLUMN) {
-                  columns.push(currentColumn);
-                  currentColumn = [];
-                }
               }
             });
             
@@ -1087,13 +1102,20 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
       tabIndex={0}
     >
       <div className={styles.textDisplay}>
-        {/* セグメントを4文節ごとに列としてグループ化 */}
+        {/* セグメントを空行（改行）のみで列としてグループ化 */}
         {(() => {
+          // currentSegmentを改行を除いたインデックスに変換
+          let currentSegmentWithoutLineBreaks = 0;
+          for (let i = 0; i < currentSegment && i < segments.length; i++) {
+            if (!segments[i].isLineBreak) {
+              currentSegmentWithoutLineBreaks++;
+            }
+          }
+          
           type ColumnData = {segments: Segment[], nonLineBreakStartIndex: number};
           const columns: ColumnData[] = [];
           let currentColumn: Segment[] = [];
           let nonLineBreakIndex = 0; // 改行セグメントを除いたインデックス
-          const SEGMENTS_PER_COLUMN = 4; // 1列に4文節
           
           segments.forEach((segment) => {
             // 改行セグメントの場合は列を区切る
@@ -1103,16 +1125,9 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
                 currentColumn = [];
               }
             } else {
-              if (currentColumn.length === 0) {
-                // 列の開始インデックスを記録
-              }
+              // 改行がない限り同じ列に追加
               currentColumn.push(segment);
               nonLineBreakIndex++;
-              // 4文節に達したら列を区切る
-              if (currentColumn.length >= SEGMENTS_PER_COLUMN) {
-                columns.push({segments: currentColumn, nonLineBreakStartIndex: nonLineBreakIndex - currentColumn.length});
-                currentColumn = [];
-              }
             }
           });
           
@@ -1130,8 +1145,8 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
                   <span
                     key={segmentIndex}
                     className={`${styles.textSegment} ${
-                      // 現在の文節のみを表示、それ以外は非表示
-                      globalIndex === currentSegment ? styles.textSegmentVisible : styles.textSegmentHidden
+                      // 現在の文節のみを表示、それ以外は非表示（改行を除いたインデックスで比較）
+                      globalIndex === currentSegmentWithoutLineBreaks ? styles.textSegmentVisible : styles.textSegmentHidden
                     } ${segmentIndex === 0 ? styles.textSegmentFirstInColumn : ''}`}
                   >
                     {/* ふりがなが存在する場合は漢字のみにふりがなを振る、ない場合は通常のテキスト */}

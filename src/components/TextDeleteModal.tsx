@@ -5,6 +5,7 @@ interface TextDeleteModalProps {
   isOpen: boolean;
   onClose: () => void;
   grades: Array<{ folder: string; label: string; stories: Array<{ filename: string; label: string }> }>;
+  initialGrade: string;
   onDeleteSuccess: () => void;
 }
 
@@ -12,20 +13,25 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
   isOpen,
   onClose,
   grades,
+  initialGrade,
   onDeleteSuccess,
 }) => {
   const [selectedGrade, setSelectedGrade] = useState<string>('');
   const [selectedStory, setSelectedStory] = useState<string>('');
-  const [githubToken, setGithubToken] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // モーダルが開かれたときに初期学年を設定
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedGrade(initialGrade);
+    }
+  }, [isOpen, initialGrade]);
 
   // モーダルが閉じられたときにリセット
   useEffect(() => {
     if (!isOpen) {
-      setSelectedGrade('');
       setSelectedStory('');
-      setGithubToken('');
       setError('');
     }
   }, [isOpen]);
@@ -215,8 +221,10 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
       return;
     }
 
-    if (!githubToken) {
-      setError('GitHub Personal Access Tokenを入力してください。');
+    // sessionStorageからトークンを取得
+    const githubToken = sessionStorage.getItem('github_token') || '';
+    if (!githubToken.trim()) {
+      setError('GitHub Personal Access Tokenが設定されていません。\n文章リスト変更画面でトークンを入力してください。');
       return;
     }
 
@@ -282,19 +290,14 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
         <div className={styles.content}>
           <div className={styles.formGroup}>
             <label className={styles.label} htmlFor="grade">
-              学年 <span className={styles.required}>*</span>
+              学年
             </label>
             <select
               id="grade"
               value={selectedGrade}
-              onChange={(e) => {
-                setSelectedGrade(e.target.value);
-                setSelectedStory(''); // 学年変更時に文章選択をリセット
-              }}
               className={styles.select}
-              disabled={isDeleting}
+              disabled={true}
             >
-              <option value="">学年を選択</option>
               {grades.map((grade) => (
                 <option key={grade.folder} value={grade.folder}>
                   {grade.label}
@@ -329,21 +332,6 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
             <p className={styles.noStories}>この学年には文章がありません。</p>
           )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="github-token">
-              GitHub Personal Access Token <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="github-token"
-              type="password"
-              value={githubToken}
-              onChange={(e) => setGithubToken(e.target.value)}
-              placeholder="GitHub Personal Access Tokenを入力"
-              className={styles.textInput}
-              disabled={isDeleting}
-            />
-          </div>
-
           {error && <div className={styles.error}>{error}</div>}
 
           <div className={styles.actions}>
@@ -359,7 +347,7 @@ export const TextDeleteModal: React.FC<TextDeleteModalProps> = ({
               type="button"
               className={`button ${styles.deleteButton}`}
               onClick={handleDelete}
-              disabled={isDeleting || !selectedGrade || !selectedStory || !githubToken}
+              disabled={isDeleting || !selectedGrade || !selectedStory}
             >
               {isDeleting ? '削除中...' : '削除'}
             </button>
