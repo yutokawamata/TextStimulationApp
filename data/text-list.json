@@ -5,12 +5,12 @@
       "label": "1年生",
       "stories": [
         {
-          "filename": "川へ行こう.txt",
-          "label": "川へ行こう"
-        },
-        {
           "filename": "森へ行こう.txt",
           "label": "森へ行こう"
+        },
+        {
+          "filename": "川へ行こう.txt",
+          "label": "川へ行こう"
         }
       ]
     },
@@ -21,10 +21,6 @@
         {
           "filename": "川へ行こう.txt",
           "label": "川へ行こう"
-        },
-        {
-          "filename": "森へ行こう.txt",
-          "label": "森へ行こう"
         }
       ]
     },
